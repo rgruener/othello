@@ -11,6 +11,7 @@ class Player(object):
         raise NotImplementedError("function get_move must be implemented by subclass")
 
     def apply_move(self, move):
+        self.gui.flash_move(move, self.color)
         self.current_board.apply_move(move, self.color)
 
     def set_current_board(self, board):
@@ -20,12 +21,11 @@ class Player(object):
 class HumanPlayer(Player):
 
     def get_move(self):
-        validMoves = self.current_board.get_valid_moves(self.color)
+        valid_moves = self.current_board.get_valid_moves(self.color)
+        self.gui.highlight_valid_moves(valid_moves)
         while True:
-            #move = input("Please Enter Valid Move (ex. 1, 4): ")
-            #print validMoves
             move = self.gui.get_move_by_mouse()
-            if move in validMoves:
+            if move in valid_moves:
                 break
         self.apply_move(move)
         return 0, self.current_board

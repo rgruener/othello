@@ -39,9 +39,6 @@ class Gui :
     def show_game (self, board):
         self.background = pygame.Surface(self.screen.get_size()).convert()
         self.background.fill (self.BACKGROUND)
-        self.score_size = 50
-        self.score1 = pygame.Surface((self.score_size, self.score_size))
-        self.score2 = pygame.Surface((self.score_size, self.score_size))
         self.screen.blit(self.background, (0, 0), self.background.get_rect())
         self.screen.blit(self.board_img, self.BOARD_POS, self.board_img.get_rect())
         self.put_stone((3, 3), WHITE)
@@ -100,16 +97,24 @@ class Gui :
 
             pygame.display.flip()
 
-    def show_winner(self, player_color):
+    def show_winner(self, player_color, board):
         self.screen.fill( pygame.Color( 0, 0, 0, 50))
-        font = pygame.font.SysFont( "Courier New", 34)
+        font = pygame.font.SysFont("Courier New", 34)
         if player_color == WHITE:
             msg = font.render("White player wins", True, self.WHITE)
         elif player_color == BLACK:
             msg = font.render("Black player wins", True, self.WHITE)
         else:
-            msg = font.render( "Tie !", True, self.WHITE)
-        self.screen.blit( msg, msg.get_rect( centerx = self.screen.get_width()/2, centery = 120))
+            msg = font.render( "Tie!", True, self.WHITE)
+
+        blacks_str = 'Black Pieces: %02d ' % int(board.black_pieces)
+        whites_str = 'White Pieces: %02d ' % int(board.white_pieces)
+        black_pieces_text = self.score_font.render(blacks_str, True, self.WHITE, self.BACKGROUND)
+        white_pieces_text = self.score_font.render(whites_str, True, self.WHITE, self.BACKGROUND)
+
+        self.screen.blit(msg, msg.get_rect(centerx = self.screen.get_width()/2, centery = 120))
+        self.screen.blit(black_pieces_text, black_pieces_text.get_rect(centerx = self.screen.get_width()/2, centery = 240))
+        self.screen.blit(white_pieces_text, white_pieces_text.get_rect(centerx = self.screen.get_width()/2, centery = 280))
         pygame.display.flip()
 
     def get_chosen_player(self, option_title_string):
@@ -187,6 +192,24 @@ class Gui :
             pygame.display.flip()
             time.sleep(.05)
 
+    def highlight_valid_moves(self, valid_moves):
+        for move in valid_moves:
+            move = (move[1], move[0])
+            x = move[0]*self.SQUARE_SIZE + self.BOARD[0]
+            y = move[1]*self.SQUARE_SIZE + self.BOARD[1]
+            pygame.draw.rect(self.screen, (255, 215, 0), \
+                    (x, y, self.SQUARE_SIZE, self.SQUARE_SIZE), 1)
+        pygame.display.flip()
+
+    def flash_move(self, pos, color):
+        for i in range(0, 3):
+            self.put_stone(pos, color)
+            time.sleep(.1)
+            self.clear_square(pos)
+            time.sleep(.1)
+        self.put_stone(pos, color)
+        time.sleep(.3)
+
     def put_stone(self, pos, color):
         """ draws piece with given position and color """
         if pos == None:
@@ -209,9 +232,6 @@ class Gui :
         pygame.display.flip()
 
     def clear_square (self, pos):
-        """ Puts in the given position a background image, to simulate that the
-	piece was removed.
-        """
         # flip orientation
         pos =(pos[1], pos[0])
 
@@ -219,7 +239,6 @@ class Gui :
         y = pos[1]*self.SQUARE_SIZE + self.BOARD[1]
         self.screen.blit(self.clear_img,(x, y), self.clear_img.get_rect())
         pygame.display.flip()
-
 
     def get_move_by_mouse(self):
         while True:
@@ -241,33 +260,31 @@ class Gui :
                     sys.exit(0)
             time.sleep(.05)
 
-    def update(self, board):
+    def update(self, board, next_player):
+        self.background.fill(self.BACKGROUND)
+        self.screen.blit(self.background, (0, 0), self.background.get_rect())
+        self.screen.blit(self.board_img, self.BOARD_POS, self.board_img.get_rect())
         for i in range(8):
             for j in range(8):
                 if board.board[i][j] != 0:
                     self.put_stone(( i, j), board.board[i][j])
 
-        self.showGameInformation(board)
+        self.showGameInformation(board, next_player)
         pygame.display.flip()
 
 
-    def showGameInformation(self, board):
+    def showGameInformation(self, board, next_player=None):
         title = self.title_font.render("Othello", True, self.WHITE, self.BACKGROUND)
         blacks_str = 'Black Pieces: %02d ' % int(board.black_pieces)
         whites_str = 'White Pieces: %02d ' % int(board.white_pieces)
         black_pieces_text = self.score_font.render(blacks_str, True, self.WHITE, self.BACKGROUND)
         white_pieces_text = self.score_font.render(whites_str, True, self.WHITE, self.BACKGROUND)
 
-        pygame.draw.circle(self.screen, (255, 215, 0), (555, 83), 7)
+        if not next_player or next_player.color == BLACK:
+            pygame.draw.circle(self.screen, (255, 215, 0), (550, 83), 7)
+        else:
+            pygame.draw.circle(self.screen, (255, 215, 0), (550, 123), 7)
 
         self.screen.blit(title, (600, 20))
         self.screen.blit(black_pieces_text,(565, 70))
         self.screen.blit(white_pieces_text,(565, 110))
-
-    def wait_quit(self):
-        # wait user to close window
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                sys.exit(0)
-            elif event.type == KEYDOWN:
-                break
