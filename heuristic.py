@@ -3,12 +3,12 @@ from config import BLACK, WHITE, EMPTY
 
 class OthelloHeuristic(object):
 
-    WIN = sys.maxint
+    WIN = sys.maxint - 1000
     PIECE_COUNT_FACTOR = [0, 0, 1]
-    CORNER_FACTOR = [150, 150, 0]
-    MOBILITY_FACTOR = [0, 0, 0]
-    EDGE_FACTOR = [0, 0, 0]
-    CORNER_EDGE_FACTOR = [0, 0, 0]
+    CORNER_FACTOR = [1000, 1000, 0]
+    MOBILITY_FACTOR = [80, 100, 0]
+    EDGE_FACTOR = [5, 5, 0]
+    CORNER_EDGE_FACTOR = [200, 200, 0]
 
     START_GAME = 0
     MID_GAME = 1
@@ -16,31 +16,31 @@ class OthelloHeuristic(object):
 
     def evaluate(self, board, current_player, other_player):
 
-        #if current_player == BLACK:
-            #OthelloHeuristic.PIECE_COUNT_FACTOR = [0, 0, 1]
-            #OthelloHeuristic.CORNER_FACTOR = [100, 100, 0]
-            #OthelloHeuristic.MOBILITY_FACTOR = [15, 20, 0]
-            #OthelloHeuristic.EDGE_FACTOR = [4, 4, 0]
-            #OthelloHeuristic.CORNER_EDGE_FACTOR = [-20, -20, 0]
-        #else:
-            #OthelloHeuristic.PIECE_COUNT_FACTOR = [0, 0, 1]
-            #OthelloHeuristic.CORNER_FACTOR = [100, 100, 0]
-            #OthelloHeuristic.MOBILITY_FACTOR = [15, 20, 0]
-            #OthelloHeuristic.EDGE_FACTOR = [4, 4, 0]
-            #OthelloHeuristic.CORNER_EDGE_FACTOR = [-10, -10, 0]
+        if current_player == BLACK:
+            OthelloHeuristic.PIECE_COUNT_FACTOR = [0, 0, 1]
+            OthelloHeuristic.CORNER_FACTOR = [1000, 1000, 0]
+            OthelloHeuristic.MOBILITY_FACTOR = [40, 45, 0]
+            OthelloHeuristic.EDGE_FACTOR = [5, 5, 0]
+            OthelloHeuristic.CORNER_EDGE_FACTOR = [400, 400, 0]
+        else:
+            OthelloHeuristic.PIECE_COUNT_FACTOR = [0, 0, 1]
+            OthelloHeuristic.CORNER_FACTOR = [1000, 1000, 0]
+            OthelloHeuristic.MOBILITY_FACTOR = [100, 150, 0]
+            OthelloHeuristic.EDGE_FACTOR = [5, 5, 0]
+            OthelloHeuristic.CORNER_EDGE_FACTOR = [400, 400, 0]
 
         # Check for win conditions
         winner = board.game_won()
         if winner is not None:
             if winner == current_player:
-                return OthelloHeuristic.WIN
+                return OthelloHeuristic.WIN + self.evaluate_piece_count(board, current_player, other_player, OthelloHeuristic.END_GAME)
             elif winner == other_player:
-                return -OthelloHeuristic.WIN-1
+                return -OthelloHeuristic.WIN-1 + self.evaluate_piece_count(board, current_player, other_player, OthelloHeuristic.END_GAME)
 
         # Determine Game State to Determine Heuristic Values
         if board.empty_spaces >= 45:
             game_state = OthelloHeuristic.START_GAME
-        elif board.empty_spaces >= 5:
+        elif board.empty_spaces >= 2:
             game_state = OthelloHeuristic.MID_GAME
         else:
             game_state = OthelloHeuristic.END_GAME

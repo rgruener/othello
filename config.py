@@ -7,5 +7,5 @@ INFINITY = 999999999
 MAX = 0
 MIN = 1
 DEFAULT_LEVEL = 2
-HUMAN = "human"
-COMPUTER = "computer"
+HUMAN = "Human"
+COMPUTER = "Computer"

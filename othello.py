@@ -3,8 +3,9 @@
 import pygame
 import board
 import player
+import numpy as np
 from gui import Gui
-from config import BLACK, WHITE
+from config import BLACK, WHITE, HUMAN, COMPUTER
 
 class Othello:
 
@@ -12,57 +13,57 @@ class Othello:
         self.gui = Gui()
         self.setup_game()
 
+    def read_board_file(self, file_name):
+        f = open(file_name)
+        lines = [line.strip() for line in f]
+        f.close()
+        board = np.zeros((8, 8), dtype=np.integer)
+        # Read In Board File
+        i = 0
+        for line in lines[:8]:
+            j = 0
+            for char in line.split():
+                board[i][j] = int(char)
+                j += 1
+            i += 1
+        # Set Current Turn
+        if int(lines[8]) == WHITE:
+            self.now_playing, self.other_player = self.other_player, self.now_playing
+
+        return board
+
     def setup_game(self):
-        #self.board.print_board()
-        #self.gui.show_options()
-        ans = raw_input("Will black (makes first move) be a computer player? (Y/N): ")
-        if ans == "Y" or ans == "y":
-            while True:
-                ans = raw_input("Please enter a computer integer time limit (3 - 60): ")
-                if ans.isdigit():
-                    limit = int(ans)
-                    if limit in range(3, 61):
-                        break
-            self.now_playing = player.RandomPlayer(BLACK, limit, self.gui)
+        options = self.gui.show_options()
+        if options['player_1'] == COMPUTER:
+            self.now_playing = player.ComputerPlayer(BLACK, int(options['player_1_time']), self.gui)
         else:
             self.now_playing = player.HumanPlayer(BLACK, gui=self.gui)
-        ans = raw_input("Will white be a computer player? (Y/N): ")
-        if ans == "Y" or ans == "y":
-            while True:
-                ans = raw_input("Please enter a computer integer time limit (3 - 60): ")
-                if ans.isdigit():
-                    limit = int(ans)
-                    if limit in range(3, 61):
-                        break
-            self.other_player = player.RandomPlayer(WHITE, limit, self.gui)
+        if options['player_2'] == COMPUTER:
+            self.other_player = player.ComputerPlayer(WHITE, int(options['player_2_time']), self.gui)
         else:
             self.other_player = player.HumanPlayer(WHITE, gui=self.gui)
-        ans = raw_input("Would you like to load a board from a text file? (Y/N): ")
-        if ans == "y" or ans == "y":
-            infile = raw_input("Please enter filename: ")
-            # TODO: Open File and Read in Current Board State
+        if options.has_key('load_file'):
+            self.board = board.Board(self.read_board_file(options['load_file']))
         else:
             self.board = board.Board()
-        self.gui.show_game(self.board)
 
     def run(self):
-        clock = pygame.time.Clock()
+        self.gui.show_game(self.board)
         while True:
-            clock.tick(60)
             winner = self.board.game_won()
             if winner is not None:
                 break
             self.now_playing.set_current_board(self.board)
             if self.board.get_valid_moves(self.now_playing.color) != []:
-                score, self.board = self.now_playing.get_move()
+                self.board = self.now_playing.get_move()
             self.gui.update(self.board, self.other_player)
+            if self.now_playing.time_limit == -1:
+                self.gui.save_board_to_file(gui=False)
             self.now_playing, self.other_player = self.other_player, self.now_playing
         self.gui.show_winner(winner, self.board)
-        pygame.time.wait(1000)
         self.restart()
 
     def restart(self):
-        self.board = board.Board()
         self.setup_game()
         self.run()
 

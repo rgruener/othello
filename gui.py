@@ -4,6 +4,9 @@ from pygame.locals import *
 import time
 from config import BLACK, WHITE, DEFAULT_LEVEL, HUMAN, COMPUTER
 import os
+from menu import *
+from Tkinter import Tk
+from tkFileDialog import askopenfilename, asksaveasfilename
 
 class Gui :
 
@@ -15,6 +18,7 @@ class Gui :
         self.BACKGROUND = (10, 10, 10)
         self.WHITE = (255, 255, 255)
         self.BLUE = (100, 100, 255)
+        self.RED = (255, 50, 50)
 
         # display
         self.SCREEN_SIZE = (840, 480)
@@ -25,9 +29,9 @@ class Gui :
         self.screen = pygame.display.set_mode(self.SCREEN_SIZE)
 
         # fonts
-        self.font = pygame.font.SysFont("Times New Roman" , 22)
         self.score_font = pygame.font.SysFont("Serif", 24)
         self.title_font = pygame.font.SysFont("Times New Roman", 34)
+        self.font = pygame.font.Font(None, 32)
 
         # image files
         self.board_img = pygame.image.load(os.path.join("images", "board.bmp")).convert()
@@ -36,161 +40,120 @@ class Gui :
         self.tip_img = pygame.image.load(os.path.join("images","tip.bmp")).convert()
         self.clear_img = pygame.image.load(os.path.join("images","nada.bmp")).convert()
 
+        pygame.display.set_caption('Othello by Robert Gruener')
+        # Ignore mouse motion (greatly reduces resources when not needed)
+        pygame.event.set_blocked(pygame.MOUSEMOTION)
+
+        self.ingame_menu = cMenu(100, 100, 20, 5, 'vertical', 100, self.screen,
+                    [('Press S to Save Game', 1, None, None)])
+        self.ingame_menu.set_center(True, True)
+        self.ingame_menu.set_alignment('center', 'center')
+
     def show_game (self, board):
         self.background = pygame.Surface(self.screen.get_size()).convert()
-        self.background.fill (self.BACKGROUND)
-        self.screen.blit(self.background, (0, 0), self.background.get_rect())
-        self.screen.blit(self.board_img, self.BOARD_POS, self.board_img.get_rect())
-        self.put_stone((3, 3), WHITE)
-        self.put_stone((4, 4), WHITE)
-        self.put_stone((3, 4), BLACK)
-        self.put_stone((4, 3), BLACK)
-        self.showGameInformation(board)
-        pygame.display.flip()
+        self.update(board)
 
     def show_options(self):
 
-        # default values
-        black_player = HUMAN
-        white_player = COMPUTER
-        ai_time = DEFAULT_LEVEL
+        self.screen.fill(self.BACKGROUND)
+        title = self.title_font.render("Othello", True, self.WHITE, self.BACKGROUND)
+        option_text = self.score_font.render("Use arrow keys to select options", True, self.WHITE, self.BACKGROUND)
 
-        black_player_string = "Set Black Player (Moves First)"
-        white_player_string = "Set White Player"
-        ai_time_string = "Set Computer AI Move Time"
-
-        while True:
-            self.screen.fill(self.BACKGROUND)
-
-            title = title_font.render("Othello", True, self.WHITE)
-            title_pos = title.get_rect(centerx = self.screen.get_width()/2, centery = 60)
-
-            start_txt = self.font.render("Start", True, self.WHITE)
-            start_pos = start_txt.get_rect(centerx = self.screen.get_width()/2, centery = 220)
-
-            black_player_txt = self.font.render(black_player_string, True, self.WHITE)
-            black_player_pos = black_player_txt.get_rect(centerx = self.screen.get_width()/2, centery = 260)
-            white_player_txt = self.font.render(white_player_string, True, self.WHITE)
-            white_player_pos = white_player_txt.get_rect(centerx = self.screen.get_width()/2, centery = 300)
-            ai_time_txt = self.font.render(ai_time_string, True, self.WHITE)
-            ai_time_pos = ai_time_txt.get_rect(centerx = self.screen.get_width()/2, centery = 340)
-
-            self.screen.blit(title, title_pos)
-            self.screen.blit(start_txt, start_pos)
-            self.screen.blit(black_player_txt, black_player_pos)
-            self.screen.blit(white_player_txt, white_player_pos)
-            self.screen.blit(ai_time_txt, ai_time_pos)
-
-            for event in pygame.event.get():
-                if event.type == QUIT:
-                    sys.exit(0)
-                elif event.type == MOUSEBUTTONDOWN:
-                    (mouse_x, mouse_y) = pygame.mouse.get_pos()
-                    if start_pos.collidepoint(mouse_x, mouse_y):
-                        return (black_player, white_player, ai_time)
-                    elif black_player_pos.collidepoint(mouse_x, mouse_y):
-                        black_player = self.get_chosen_player(black_player_string)
-                    elif white_player_pos.collidepoint(mouse_x, mouse_y):
-                        white_player = self.get_chosen_player(white_player_string)
-                    elif ai_time_pos.collidepoint(mouse_x, mouse_y):
-                        ai_time = self.get_chosen_level(ai_time_string)
-
-            pygame.display.flip()
-
-    def show_winner(self, player_color, board):
-        self.screen.fill( pygame.Color( 0, 0, 0, 50))
-        font = pygame.font.SysFont("Courier New", 34)
-        if player_color == WHITE:
-            msg = font.render("White player wins", True, self.WHITE)
-        elif player_color == BLACK:
-            msg = font.render("Black player wins", True, self.WHITE)
-        else:
-            msg = font.render( "Tie!", True, self.WHITE)
-
-        blacks_str = 'Black Pieces: %02d ' % int(board.black_pieces)
-        whites_str = 'White Pieces: %02d ' % int(board.white_pieces)
-        black_pieces_text = self.score_font.render(blacks_str, True, self.WHITE, self.BACKGROUND)
-        white_pieces_text = self.score_font.render(whites_str, True, self.WHITE, self.BACKGROUND)
-
-        self.screen.blit(msg, msg.get_rect(centerx = self.screen.get_width()/2, centery = 120))
-        self.screen.blit(black_pieces_text, black_pieces_text.get_rect(centerx = self.screen.get_width()/2, centery = 240))
-        self.screen.blit(white_pieces_text, white_pieces_text.get_rect(centerx = self.screen.get_width()/2, centery = 280))
+        self.screen.blit(title, (370, 20))
+        self.screen.blit(option_text, (262, 80))
         pygame.display.flip()
 
-    def get_chosen_player(self, option_title_string):
-        while True:
-            self.screen.fill(self.BACKGROUND)
-            title_fnt = pygame.font.SysFont("Times New Roman", 34)
-            title = title_fnt.render("Othello", True, self.WHITE)
-            title_pos = title.get_rect(centerx = self.screen.get_width()/2, centery = 60)
-            option_title = self.font.render(option_title_string, True, self.WHITE)
+        START_NEW_GAME = 0
+        LOAD_GAME = 1
+        PLAYER_1 = 2
+        PLAYER_1_TIME = 3
+        PLAYER_2 = 4
+        PLAYER_2_TIME = 5
+        EXIT = 6
+        options = dict()
 
-            human_txt = self.font.render("Human", True, self.WHITE)
-            human_pos = human_txt.get_rect(centerx = self.screen.get_width()/2, centery = 220)
-            comp_ai_txt = self.font.render("Computer with AI", True, self.WHITE)
-            comp_ai_pos = comp_ai_txt.get_rect(centerx = self.screen.get_width()/2, centery = 260)
-            comp_random_txt = self.font.render("Computer with Random Moves", True, self.WHITE)
-            comp_random_pos = comp_random_txt.get_rect(centerx = self.screen.get_width()/2, centery = 300)
-
-            self.screen.blit(title, title_pos)
-            self.screen.blit(human_txt, human_pos)
-            self.screen.blit(comp_ai_txt, comp_ai_pos)
-            self.screen.blit(comp_random_txt, comp_random_pos)
-
-            for event in pygame.event.get():
-                if event.type == QUIT:
-                    sys.exit(0)
-                elif event.type == MOUSEBUTTONDOWN:
-                    (mouse_x, mouse_y) = pygame.mouse.get_pos()
-                    if human_pos.collidepoint(mouse_x, mouse_y):
-                        return HUMAN
-                    elif comp_ai_pos.collidepoint(mouse_x, mouse_y):
-                        return COMPUTER
-                    elif comp_random_pos.collidepoint(mouse_x, mouse_y):
-                        return RANDOM
-
-            pygame.display.flip()
-
-    def get_chosen_level(self):
-        """ Level options
-        """
+        menu = cMenu(50, 50, 20, 5, 'vertical', 100, self.screen,
+                    [('Start New Game', START_NEW_GAME+1, None, None),
+                     ('Load Game', LOAD_GAME+1, None, None),
+                     ('Player 1 (Black): ', PLAYER_1+1, None, [HUMAN, COMPUTER], 0),
+                     ('Player 1 AI Time: ', PLAYER_1_TIME+1, None, [str(i) for i in range(2, 61)], 2),
+                     ('Player 2 (White): ', PLAYER_2+1, None, [HUMAN, COMPUTER], 1),
+                     ('Player 2 AI Time: ', PLAYER_2_TIME+1, None, [str(i) for i in range(2, 61)], 2),
+                     ('Exit', EXIT+1, None, None)])
+        menu.set_center(True, True)
+        menu.set_alignment('center', 'center')
+        state = 0
+        prev_state = 1
+        rect_list = []
 
         while True:
-            self.screen.fill(self.BACKGROUND)
-            title_fnt = pygame.font.SysFont("Times New Roman", 34)
-            title = title_fnt.render("Othello", True, self.BLUE)
-            title_pos = title.get_rect(centerx = self.screen.get_width()/2, \
-                                         centery = 60)
-            one_txt = self.font.render("1 Second", True, self.WHITE)
-            one_pos = one_txt.get_rect(centerx = self.screen.get_width()/2, \
-                                             centery = 120)
-            two_txt = self.font.render("Level 2", True, self.WHITE)
-            two_pos = two_txt.get_rect(centerx = self.screen.get_width()/2, \
-                                       centery = 240)
 
-            three_txt = self.font.render("Level 3", True, self.WHITE)
-            three_pos = three_txt.get_rect(centerx = self.screen.get_width()/2, \
-                                       centery = 360)
+            if prev_state != state:
+                pygame.event.post(pygame.event.Event(EVENT_CHANGE_STATE, key = 0))
+                prev_state = state
 
-            self.screen.blit(title, title_pos)
-            self.screen.blit(one_txt, one_pos)
-            self.screen.blit(two_txt, two_pos)
-            self.screen.blit(three_txt, three_pos)
+            e = pygame.event.wait()
 
+            # Update the menu, based on which "state" we are in - When using the menu
+            # in a more complex program, definitely make the states global variables
+            # so that you can refer to them by a name
+            if e.type == pygame.KEYDOWN or e.type == EVENT_CHANGE_STATE:
+                if state == 0:
+                    rect_list, state = menu.update(e, state, prev_state)
+            elif state == START_NEW_GAME+1:
+                options['player_1'] = menu.menu_items[PLAYER_1]['options'][menu.menu_items[PLAYER_1]['opt_ind']]
+                options['player_1_time'] = menu.menu_items[PLAYER_1_TIME]['options'][menu.menu_items[PLAYER_1_TIME]['opt_ind']]
+                options['player_2'] = menu.menu_items[PLAYER_2]['options'][menu.menu_items[PLAYER_2]['opt_ind']]
+                options['player_2_time'] = menu.menu_items[PLAYER_2_TIME]['options'][menu.menu_items[PLAYER_2_TIME]['opt_ind']]
+                return options
+            elif state == LOAD_GAME+1:
+                Tk().withdraw()
+                file_name = askopenfilename()
+                if file_name:
+                    options['load_file'] = file_name
+                    options['player_1'] = menu.menu_items[PLAYER_1]['options'][menu.menu_items[PLAYER_1]['opt_ind']]
+                    options['player_1_time'] = menu.menu_items[PLAYER_1_TIME]['options'][menu.menu_items[PLAYER_1_TIME]['opt_ind']]
+                    options['player_2'] = menu.menu_items[PLAYER_2]['options'][menu.menu_items[PLAYER_2]['opt_ind']]
+                    options['player_2_time'] = menu.menu_items[PLAYER_2_TIME]['options'][menu.menu_items[PLAYER_2_TIME]['opt_ind']]
+                    return options
+                state = 0
+            elif state == EXIT+1:
+                pygame.quit()
+                sys.exit()
+            else:
+                state = 0
+
+            # Quit if the user presses the exit button
+            if e.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            # Update the screen
+            pygame.display.update(rect_list)
+
+    def show_winner(self, player_color, board):
+        font = pygame.font.Font(None, 34)
+        if player_color == WHITE:
+            msg = font.render("White player wins", True, self.RED)
+        elif player_color == BLACK:
+            msg = font.render("Black player wins", True, self.RED)
+        else:
+            msg = font.render( "Tie!", True, self.RED)
+        msg2 = font.render("Press Mouse To Restart Game", True, self.RED)
+
+        self.screen.blit(msg, msg.get_rect(centerx = self.screen.get_width()/2 - 175, centery = 225))
+        self.screen.blit(msg2, msg2.get_rect(centerx = self.screen.get_width()/2 - 175, centery = 255))
+        pygame.display.flip()
+
+        while True:
             for event in pygame.event.get():
-                if event.type == QUIT:
+                if event.type == MOUSEBUTTONDOWN:
+                    return
+                elif event.type == QUIT:
                     sys.exit(0)
-                elif event.type == MOUSEBUTTONDOWN:
-                    (mouse_x, mouse_y) = pygame.mouse.get_pos()
-                    if one_pos.collidepoint(mouse_x, mouse_y):
-                        return 1
-                    elif two_pos.collidepoint(mouse_x, mouse_y):
-                        return 2
-                    elif three_pos.collidepoint(mouse_x, mouse_y):
-                        return 3
-
-            pygame.display.flip()
             time.sleep(.05)
+
+
 
     def highlight_valid_moves(self, valid_moves):
         for move in valid_moves:
@@ -241,26 +204,33 @@ class Gui :
         pygame.display.flip()
 
     def get_move_by_mouse(self):
+        state = 0
+        prev_state = 1
+        rect_list = []
         while True:
             for event in pygame.event.get():
                 if event.type == MOUSEBUTTONDOWN:
-                    (mouse_x, mouse_y) = pygame.mouse.get_pos()
                     # Check to see if click was on the board
                     if mouse_x < self.BOARD_SIZE + self.BOARD[0] or \
                        mouse_x > self.BOARD[0] or \
                        mouse_y < self.BOARD_SIZE + self.BOARD[1] or \
                        mouse_y > self.BOARD[1] :
-                        position =((mouse_x - self.BOARD[0]) / self.SQUARE_SIZE), \
-                                  ((mouse_y - self.BOARD[1]) / self.SQUARE_SIZE)
+                        position = ((mouse_x - self.BOARD[0]) / self.SQUARE_SIZE), \
+                                   ((mouse_y - self.BOARD[1]) / self.SQUARE_SIZE)
                         # flip orientation
-                        position =(position[1], position[0])
+                        position = (position[1], position[0])
                     return position
-
+                if event.type == KEYDOWN:
+                    if event.key == pygame.K_s:
+                        self.save_board_to_file()
                 elif event.type == QUIT:
                     sys.exit(0)
+            pygame.display.flip()
             time.sleep(.05)
 
-    def update(self, board, next_player):
+    def update(self, board, next_player=None):
+        self.board = board
+        self.player = next_player
         self.background.fill(self.BACKGROUND)
         self.screen.blit(self.background, (0, 0), self.background.get_rect())
         self.screen.blit(self.board_img, self.BOARD_POS, self.board_img.get_rect())
@@ -272,6 +242,23 @@ class Gui :
         self.showGameInformation(board, next_player)
         pygame.display.flip()
 
+    def save_board_to_file(self, gui=True, file_name='board.txt'):
+        if gui:
+            Tk().withdraw()
+            file_name = asksaveasfilename()
+        if not file_name:
+            return
+        f = open(file_name, 'w')
+        for i in range(8):
+            for j in range(8):
+                f.write(str(int(self.board.board[i][j])))
+                if j == 7:
+                    f.write('\n')
+                else:
+                    f.write(' ')
+        f.write(str(self.player.color) + '\n')
+        f.write(str(self.player.time_limit))
+        f.close()
 
     def showGameInformation(self, board, next_player=None):
         title = self.title_font.render("Othello", True, self.WHITE, self.BACKGROUND)
@@ -279,6 +266,7 @@ class Gui :
         whites_str = 'White Pieces: %02d ' % int(board.white_pieces)
         black_pieces_text = self.score_font.render(blacks_str, True, self.WHITE, self.BACKGROUND)
         white_pieces_text = self.score_font.render(whites_str, True, self.WHITE, self.BACKGROUND)
+        save_state = self.font.render('Press S to save the game', True, self.WHITE)
 
         if not next_player or next_player.color == BLACK:
             pygame.draw.circle(self.screen, (255, 215, 0), (550, 83), 7)
@@ -288,3 +276,4 @@ class Gui :
         self.screen.blit(title, (600, 20))
         self.screen.blit(black_pieces_text,(565, 70))
         self.screen.blit(white_pieces_text,(565, 110))
+        self.screen.blit(save_state, (520, 200))
