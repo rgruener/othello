@@ -13,8 +13,7 @@ class Board:
             self.board = board
             self.count_pieces()
         else:
-            #self.board = [[0 for i in xrange(8)] for j in xrange(8)] # 8 by 8 empty board
-            self.board = np.zeros((8, 8), dtype=np.integer)
+            self.board = np.zeros((8, 8), dtype=np.integer) # 8 by 8 empty board
             self.board[3][4] = BLACK
             self.board[4][3] = BLACK
             self.board[3][3] = WHITE
@@ -192,20 +191,9 @@ class Board:
 
     def flip_pieces(self, position, color):
         for direction in xrange(1,9): # Flip row for each of the 8 possible directions
-            #import time
-            #start = time.time()
             (num_pieces, pieces_to_flip) = self.pieces_to_flip_in_row(position, color, direction)
-            #print "Python:", time.time()-start
-            #start = time.time()
-            #v = Board.LIBFUNCTIONS.pieces_to_flip_in_row(c_void_p(self.board.ctypes.data), position[0], position[1], color, direction)
-            #c_int_p_p = POINTER(POINTER(c_int))
-            #pieces_to_flip = cast(v, c_int_p_p)
-            #num_pieces = pieces_to_flip[0][0]
-            #print "C:", time.time()-start
             for i in range(num_pieces):
-                #self.board[pieces_to_flip[i+1][0]][pieces_to_flip[i+1][1]] = color
                 self.board[pieces_to_flip[i][0]][pieces_to_flip[i][1]] = color
-            #Board.LIBFUNCTIONS.free_moves(pieces_to_flip, num_pieces)
             if color == BLACK:
                 self.black_pieces += num_pieces
                 self.white_pieces -= num_pieces
@@ -291,7 +279,6 @@ class Board:
         moves = self.get_valid_moves(color)
         children = [None]*len(moves)
         for (i, move) in enumerate(moves):
-            #child = deepcopy(self)
             child = Board()
             child.now_playing = self.now_playing
             child.board = np.copy(self.board)

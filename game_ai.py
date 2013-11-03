@@ -7,13 +7,14 @@ class GameArtificialIntelligence(object):
 
     def __init__(self, heuristic_fn):
         self.heuristic = heuristic_fn
+        self.trans_table = dict()
 
     def move_search(self, starting_node, time_limit, current_player, other_player):
         self.player = current_player
         self.other_player = other_player
         possible_moves = starting_node.get_valid_moves(current_player)
         if len(possible_moves) == 1:
-            print >> sys.stderr, "Only 1 Possible Move:", possible_moves[0]
+            print "Only 1 Possible Move:", possible_moves[0]
             return possible_moves[0]
         depth = 0
         score = -sys.maxint - 1
@@ -27,25 +28,23 @@ class GameArtificialIntelligence(object):
         self.first = True
         while datetime.datetime.now() < time_cutoff and not self.cutoff and starting_node.empty_spaces >= depth:
             depth += 1
-            self.all_terminal = False
             (new_move, new_score) = self.alpha_beta_wrapper(starting_node, depth, current_player, other_player)
             if new_move is not None and not self.cutoff:
                 move = new_move
                 score = new_score
                 if score > WIN:
-                    print >> sys.stderr, "Got to Depth:", depth, "Move:", move, "Win by ", score - WIN, "pieces"
+                    print "Got to Depth:", depth, "Best Move:", move, "Win by ", score - WIN, "pieces"
                 elif score < -WIN-1:
-                    print >> sys.stderr, "Got to Depth:", depth, "Move:", move, "Loss by ", -WIN-1-score, "pieces"
+                    print "Got to Depth:", depth, "Best Move:", move, "Loss by", -WIN-1-score, "pieces"
                 else:
-                    print >> sys.stderr, "Got to Depth:", depth, "Move:", move, "Score:", score
+                    print "Got to Depth:", depth, "Best Move:", move
             else:
-                print >> sys.stderr, "Cutoff at depth", depth
+                print "Cutoff at depth", depth
         return move
 
     def alpha_beta_wrapper(self, node, depth, current_player, other_player):
         alpha = -sys.maxint-1
         beta = sys.maxint
-        num_equal = 1
         if self.first:
             children = node.child_nodes(current_player)
             # Shuffle order of moves evaluated to prevent playing the same game every time
@@ -59,8 +58,7 @@ class GameArtificialIntelligence(object):
                 if new_alpha > alpha:
                     alpha = new_alpha
                     best_move = move
-                    num_equal = 1
-                #print >> sys.stderr, "Possible move:", move, "Score:", new_alpha
+                #print "Possible move:", move, "Score:", new_alpha
             self.first = False
         else:
             children = self.queue.queue
@@ -74,17 +72,24 @@ class GameArtificialIntelligence(object):
                 if new_alpha > alpha:
                     alpha = new_alpha
                     best_move = move
-                    num_equal = 1
-                #print >> sys.stderr, "Possible move:", move, "Score:", new_alpha
+                #print "Possible move:", move, "Score:", new_alpha
         return (best_move, alpha)
 
+    def keyify(self, node, player):
+        node.board.flags.writeable = False
+        return hash(node.board.data)
 
     def alpha_beta_search(self, node, depth, current_player, other_player, alpha=-sys.maxint-1, beta=sys.maxint, maximizing=True):
         if datetime.datetime.now() > self.time_done - datetime.timedelta(milliseconds=10):
             self.cutoff = True
             return None
         if depth == 0 or node.game_won() is not None:
-            return self.heuristic(node, self.player, self.other_player)
+            key = self.keyify(node, self.player)
+            if self.trans_table.has_key(key):
+                return self.trans_table[key]
+            val = self.heuristic(node, self.player, self.other_player)
+            self.trans_table[key] = val
+            return val
         children = node.child_nodes(current_player)
         if maximizing:
             if len(children) == 0:
@@ -110,6 +115,72 @@ class GameArtificialIntelligence(object):
             else:
                 for (child, move) in children:
                     new_beta = self.alpha_beta_search(child, depth-1, other_player, current_player, alpha, beta)
+                    if new_beta is None:
+                        return None
+                    beta = min(beta, new_beta)
+                    if beta <= alpha:
+                        break
+            return beta
+
+    def alpha_beta_search_trans(self, node, depth, current_player, other_player, alpha=-sys.maxint-1, beta=sys.maxint, maximizing=True):
+        if datetime.datetime.now() > self.time_done - datetime.timedelta(milliseconds=10):
+            self.cutoff = True
+            return None
+        if depth == 0 or node.game_won() is not None:
+            return self.heuristic(node, self.player, self.other_player)
+        children = node.child_nodes(current_player)
+        if maximizing:
+            if len(children) == 0:
+                node.board.flags.writeable = False
+                key = self.keyify(node, other_player)
+                if self.trans_table.has_key(key) and self.trans_table[key][0] >= depth-1:
+                    new_alpha = self.trans_table[key][1]
+                else:
+                    new_alpha = self.alpha_beta_search(node, depth-1, other_player, current_player, alpha, beta, False)
+                    if new_alpha is not None:
+                        self.trans_table[key] = (depth-1, new_alpha)
+                if new_alpha is None:
+                    return None
+                alpha = max(alpha, new_alpha)
+            else:
+                for (child, move) in children:
+                    child.board.flags.writeable = False
+                    key = self.keyify(child, other_player)
+                    if self.trans_table.has_key(key) and self.trans_table[key][0] >= depth-1:
+                        new_alpha = self.trans_table[key][1]
+                    else:
+                        new_alpha = self.alpha_beta_search(child, depth-1, other_player, current_player, alpha, beta, False)
+                        if new_alpha is not None:
+                            self.trans_table[key] = (depth-1, new_alpha)
+                    if new_alpha is None:
+                        return None
+                    alpha = max(alpha, new_alpha)
+                    if alpha >= beta:
+                        break
+            return alpha
+        else:
+            if len(children) == 0:
+                node.board.flags.writeable = False
+                key = self.keyify(node, other_player)
+                if self.trans_table.has_key(key) and self.trans_table[key][0] >= depth-1:
+                    new_beta = self.trans_table[key][1]
+                else:
+                    new_beta = self.alpha_beta_search(node, depth-1, other_player, current_player, alpha, beta)
+                    if new_beta is not None:
+                        self.trans_table[key] = (depth-1, new_beta)
+                if new_beta is None:
+                    return None
+                beta = min(beta, new_beta)
+            else:
+                for (child, move) in children:
+                    child.board.flags.writeable = False
+                    key = self.keyify(child, other_player)
+                    if self.trans_table.has_key(key) and self.trans_table[key][0] >= depth-1:
+                        new_beta = self.trans_table[key][1]
+                    else:
+                        new_beta = self.alpha_beta_search(child, depth-1, other_player, current_player, alpha, beta)
+                        if new_beta is not None:
+                            self.trans_table[key] = (depth-1, new_beta)
                     if new_beta is None:
                         return None
                     beta = min(beta, new_beta)

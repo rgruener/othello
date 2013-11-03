@@ -210,6 +210,7 @@ class Gui :
         while True:
             for event in pygame.event.get():
                 if event.type == MOUSEBUTTONDOWN:
+                    (mouse_x, mouse_y) = pygame.mouse.get_pos()
                     # Check to see if click was on the board
                     if mouse_x < self.BOARD_SIZE + self.BOARD[0] or \
                        mouse_x > self.BOARD[0] or \
