@@ -9,28 +9,13 @@ class OthelloHeuristic(object):
     MOBILITY_FACTOR = [250, 300, 0]
     EDGE_FACTOR = [25, 25, 0]
     CORNER_EDGE_FACTOR = [400, 400, 0]
-    STABILITY_FACTOR = [110, 110, 0]
+    STABILITY_FACTOR = [120, 120, 0]
 
     START_GAME = 0
     MID_GAME = 1
     END_GAME = 2
 
     def evaluate(self, board, current_player, other_player):
-
-        if current_player == BLACK:
-            OthelloHeuristic.PIECE_COUNT_FACTOR = [0, 0, 1]
-            OthelloHeuristic.CORNER_FACTOR = [1000, 1000, 0]
-            OthelloHeuristic.MOBILITY_FACTOR = [300, 350, 0]
-            OthelloHeuristic.EDGE_FACTOR = [25, 25, 0]
-            OthelloHeuristic.CORNER_EDGE_FACTOR = [400, 400, 0]
-            OthelloHeuristic.STABILITY_FACTOR = [120, 120, 0]
-        else:
-            OthelloHeuristic.PIECE_COUNT_FACTOR = [0, 0, 1]
-            OthelloHeuristic.CORNER_FACTOR = [1000, 1000, 0]
-            OthelloHeuristic.MOBILITY_FACTOR = [250, 300, 0]
-            OthelloHeuristic.EDGE_FACTOR = [25, 25, 0]
-            OthelloHeuristic.CORNER_EDGE_FACTOR = [400, 400, 0]
-            OthelloHeuristic.STABILITY_FACTOR = [120, 120, 0]
 
         # Check for win conditions
         winner = board.game_won()

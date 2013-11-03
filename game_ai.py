@@ -32,12 +32,7 @@ class GameArtificialIntelligence(object):
             if new_move is not None and not self.cutoff:
                 move = new_move
                 score = new_score
-                if score > WIN:
-                    print "Got to Depth:", depth, "Best Move:", move, "Win by ", score - WIN, "pieces"
-                elif score < -WIN-1:
-                    print "Got to Depth:", depth, "Best Move:", move, "Loss by", -WIN-1-score, "pieces"
-                else:
-                    print "Got to Depth:", depth, "Best Move:", move
+                print "Got to Depth:", depth
             else:
                 print "Cutoff at depth", depth
         return move
