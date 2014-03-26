@@ -6,6 +6,7 @@ An Implementation of the board game Othello using Python, the C/Python api and p
 ## Requirements ##
 * Python 2.7
 * pygame
+* numpy
 * ctypes
 * make
 * gcc
