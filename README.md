@@ -15,8 +15,9 @@ Cooper Union taught by Professor Carl Sable in the Fall 2013 Term
 
 ## Dependencies ##
 * Python 2.7
-* pygame
 * numpy
+* python-pygame
+* python-tk
 * ctypes
 * make
 * gcc
