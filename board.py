@@ -123,11 +123,7 @@ class Board:
         return moves
 
     def get_valid_moves(self, color):
-        if color == BLACK:
-            num_pieces = self.black_pieces
-        else:
-            num_pieces = self.white_pieces
-        v = Board.LIBFUNCTIONS.get_valid_moves(c_void_p(self.board.ctypes.data), color, num_pieces, self.empty_spaces)
+        v = Board.LIBFUNCTIONS.get_valid_moves(c_void_p(self.board.ctypes.data), color)
         c_int_p_p = POINTER(POINTER(c_int))
         moves = cast(v, c_int_p_p)
         valid_moves = [None] * moves[0][0]
@@ -148,10 +144,6 @@ class Board:
             return self.get_valid_moves_by_empty_squares(color)
 
     def get_valid_moves_by_colored_squares(self, color):
-        if color == BLACK:
-            other = WHITE
-        else:
-            other = BLACK
 
         valid_moves = []
 
@@ -222,12 +214,8 @@ class Board:
 
         if color == WHITE:
             other = BLACK
-            add_attr = 'white_pieces'
-            rem_attr = 'black_pieces'
         else:
             other = WHITE
-            add_attr = 'black_pieces'
-            rem_attr = 'white_pieces'
 
         if i in xrange(8) and j in xrange(8) and self.board[i][j] == other:
             # assures there is at least one piece to flip
