@@ -5,7 +5,15 @@
 #define BLACK 1
 #define WHITE 2
 
-int pieces_to_flip_in_row_bool(int board[8][8], int row, int col, int color, int direction){
+#if __GNUC__
+#if __x86_64__ || __ppc64__
+#define BOARD_TYPE long long int
+#else
+#define BOARD_TYPE int
+#endif
+#endif
+
+int pieces_to_flip_in_row_bool(BOARD_TYPE board[8][8], int row, int col, int color, int direction){
     int other = BLACK;
     int row_inc = 0;
     int col_inc = 0;
@@ -45,7 +53,7 @@ int pieces_to_flip_in_row_bool(int board[8][8], int row, int col, int color, int
     return 0;
 }
 
-int **pieces_to_flip_in_row(int board[8][8], int row, int col, int color, int direction){
+int **pieces_to_flip_in_row(BOARD_TYPE board[8][8], int row, int col, int color, int direction){
     int other = BLACK;
     int row_inc = 0;
     int col_inc = 0;
@@ -95,12 +103,10 @@ int **pieces_to_flip_in_row(int board[8][8], int row, int col, int color, int di
             pieces[0][0] = num_moves;
         }
     }
-
-    /*printf("%d\n", pieces);*/
     return pieces;
 }
 
-int **get_valid_moves_by_empty_squares(int board[8][8], int color){
+int **get_valid_moves_by_empty_squares(BOARD_TYPE board[8][8], int color){
 
     int num_moves = 0;
     long i, j, dir;
@@ -127,7 +133,7 @@ int **get_valid_moves_by_empty_squares(int board[8][8], int color){
     return moves;
 }
 
-void add_moves_in_direction(int board[8][8], int other, int ***moves, int i, int j, int row_inc, int col_inc, int *num_moves){
+void add_moves_in_direction(BOARD_TYPE board[8][8], int other, int ***moves, int i, int j, int row_inc, int col_inc, int *num_moves){
     int row = i + row_inc;
     int column = j + col_inc;
     if (row >= 0 && column < 8 && board[row][column] == other){
@@ -148,7 +154,7 @@ void add_moves_in_direction(int board[8][8], int other, int ***moves, int i, int
     }
 }
 
-int **get_valid_moves_by_pieces(int board[8][8], int color){
+int **get_valid_moves_by_pieces(BOARD_TYPE board[8][8], int color){
     int other;
     if (color == BLACK){
         other = WHITE;
@@ -182,7 +188,7 @@ int **get_valid_moves_by_pieces(int board[8][8], int color){
     return moves;
 }
 
-int **get_valid_moves(int board[8][8], int color, int pieces, int empties){
+int **get_valid_moves(BOARD_TYPE board[8][8], int color){
     return get_valid_moves_by_empty_squares(board, color);
 }
 
